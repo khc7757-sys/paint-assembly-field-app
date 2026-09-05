@@ -1,0 +1,15 @@
+﻿{
+  "name": "도장 조립 현장 실적 입력",
+  "short_name": "현장실적",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#eef2f6",
+  "theme_color": "#0f2a5c",
+  "orientation": "landscape",
+  "icons": [
+    {"src":"./icon-192.png","sizes":"192x192","type":"image/png"},
+    {"src":"./icon-512.png","sizes":"512x512","type":"image/png"},
+    {"src":"./icon-192-maskable.png","sizes":"192x192","type":"image/png","purpose":"maskable"},
+    {"src":"./icon-512-maskable.png","sizes":"512x512","type":"image/png","purpose":"maskable"}
+  ]
+}

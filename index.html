@@ -1,0 +1,68 @@
+﻿<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#0f2a5c">
+<link rel="manifest" href="./manifest.json">
+<title>도장 조립 현장 실적 입력</title>
+<style>
+:root{--nav:#0f2a5c;--blue:#1f67c1;--line:#dfe5ec;--bg:#eef2f6;--text:#172033;--muted:#6b778a;--ok:#e8f4ff;--pending:#fff2a8;--done:#e8f7ee;--add:#ffedd5;--danger:#fee2e2}
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;font-family:Pretendard,"Noto Sans KR","Malgun Gothic",Arial,sans-serif;background:var(--bg);color:var(--text);font-size:16px}
+button,input{font:inherit}.app{height:100dvh;display:flex;flex-direction:column;min-width:760px}
+.top{flex:0 0 auto;background:#fff;border-bottom:1px solid var(--line);box-shadow:0 2px 8px rgba(0,0,0,.08);z-index:10}
+.titlebar{height:34px;display:flex;align-items:center;justify-content:space-between;padding:0 10px;background:var(--nav);color:#fff}.titlebar b{font-size:19px}.sync{font-size:12px;opacity:.9;white-space:nowrap}
+.controls{height:48px;display:flex;align-items:center;gap:8px;padding:4px 8px}.tabs{display:flex;gap:5px}.tab{height:40px;min-width:96px;border:1px solid #cbd5e1;background:#fff;border-radius:8px;font-weight:900}.tab.active{background:var(--blue);border-color:var(--blue);color:#fff}
+.search{margin-left:auto;display:flex;gap:5px;align-items:center}.search input{height:40px;width:190px;border:1px solid #bcc7d5;border-radius:8px;padding:0 10px;font-weight:800}.search button{height:40px;min-width:58px;border:0;border-radius:8px;background:#26364d;color:#fff;font-weight:900}.clear{background:#6b7280!important}
+.head,.row{display:grid;grid-template-columns:100px minmax(145px,1.3fr) 110px 95px minmax(80px,.7fr) 130px;align-items:center;text-align:center}.head{height:34px;background:#f6f8fb;color:#4c596d;border-top:1px solid var(--line);border-bottom:1px solid var(--line);font-size:14px;font-weight:900}.head>div,.row>div{border-right:1px solid #edf0f4;height:100%;display:flex;align-items:center;justify-content:center;min-width:0}.head>div:last-child,.row>div:last-child{border-right:0}
+.list{flex:1 1 auto;min-height:0;overflow-y:auto;background:#fff;overscroll-behavior:contain}.row{height:44px;border-bottom:1px solid #edf0f4;font-size:16px}.row.done-row{background:#f6faf7}.row .model{font-weight:800;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:0 4px}.machine{font-size:18px;font-weight:950;border-radius:7px;margin:3px 5px;height:36px!important}.machine.paint-done{background:#dbeafe;color:#174ea6}.machine.paint-pending{background:#fff3b0;color:#765b00}.plan{font-weight:900}.remark{font-size:15px}.add{display:inline-flex;padding:3px 7px;border-radius:999px;background:var(--add);color:#b45309;font-weight:900;font-size:13px}.hidden-badge{display:inline-flex;padding:3px 7px;border-radius:999px;background:var(--danger);color:#b42318;font-weight:900;font-size:12px}
+.actions{gap:4px;padding:2px 4px}.okbtn,.calbtn{height:38px;border-radius:7px;font-weight:950}.okbtn{min-width:58px;border:0;background:#1f7a4f;color:white}.calbtn{width:46px;border:1px solid #9eb2c9;background:#fff;position:relative;color:transparent;overflow:hidden}.calbtn:after{content:'달력';position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#26415f;font-size:12px;font-weight:900;pointer-events:none}.calbtn input{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer}.done-text{font-size:15px;font-weight:950;color:#17623f;white-space:nowrap}.empty{padding:36px;text-align:center;color:var(--muted);font-weight:800}
+.search-result{display:none;flex:1 1 auto;min-height:0;overflow:auto;background:#fff;padding:8px}.search-result.show{display:block}.search-line{min-height:48px;display:grid;grid-template-columns:95px minmax(145px,1.3fr) 105px minmax(145px,1fr) minmax(145px,1fr) 85px;align-items:center;border:1px solid var(--line);border-radius:9px;margin-bottom:6px;text-align:center;font-weight:800}.search-line .sm{font-size:14px}.state-done{color:#17623f}.state-pending{color:#9a6700}.footer{flex:0 0 24px;background:#fff;border-top:1px solid var(--line);padding:3px 9px;font-size:11px;color:var(--muted);display:flex;justify-content:space-between}
+.toast{position:fixed;left:50%;bottom:34px;transform:translateX(-50%);background:#172033;color:#fff;padding:10px 15px;border-radius:10px;font-weight:900;display:none;z-index:30}.toast.show{display:block}
+@media(max-height:640px){.titlebar{height:30px}.titlebar b{font-size:18px}.controls{height:44px}.tab,.search input,.search button{height:36px}.head{height:30px}.row{height:42px}.machine{height:34px!important}.okbtn,.calbtn{height:36px}.footer{display:none}}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="top">
+    <div class="titlebar"><b>도장 조립 현장 실적 입력</b><span class="sync" id="syncText">연결 준비중</span></div>
+    <div class="controls">
+      <div class="tabs"><button class="tab active" data-part="paint">도장파트</button><button class="tab" data-part="assembly">조립파트</button></div>
+      <div class="search"><input id="machineSearch" inputmode="numeric" placeholder="호기수 검색"><button id="searchBtn">검색</button><button id="clearBtn" class="clear" style="display:none">목록</button></div>
+    </div>
+    <div class="head" id="listHead"><div>볼보조립일</div><div>기종</div><div>호기수</div><div id="planHead">도장지시일</div><div>비고</div><div>입력</div></div>
+  </div>
+  <div class="list" id="workList"></div>
+  <div class="search-result" id="searchResult"></div>
+  <div class="footer"><span>PC 작업지시 BASE 순서 그대로 표시</span><span id="countText">0건</span></div>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+'use strict';
+// 새 현장앱 전용 Apps Script 배포 URL을 아래에 넣으세요.
+const GAS_URL='https://script.google.com/macros/s/AKfycbz3TF7sk2k-p5eCrQcvUOXAaRXm7cMUOUY8aprKgFRIJ9ENQWSPz1iFIw_-uvh1WCp8/exec';
+const AUTO_REFRESH_MS=60*1000;
+const state={part:'paint',rows:[],searchMode:false,timer:null,loading:false,lastAt:null};
+const $=s=>document.querySelector(s);
+function esc(v){return String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
+function mmdd(v){const s=String(v||'');const m=s.match(/^(?:\d{4}-?)?(\d{2})-?(\d{2})$/);return m?`${Number(m[1])}/${Number(m[2])}`:(s||'-')}
+function todayKst(){try{const p={};new Intl.DateTimeFormat('en-US',{timeZone:'Asia/Seoul',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date()).forEach(x=>p[x.type]=x.value);return `${p.year}-${p.month}-${p.day}`}catch(e){return new Date(Date.now()+9*3600000).toISOString().slice(0,10)}}
+function showToast(msg){const e=$('#toast');e.textContent=msg;e.classList.add('show');setTimeout(()=>e.classList.remove('show'),1800)}
+async function api(action,payload={}){if(!GAS_URL.startsWith('https://'))throw new Error('Index의 GAS_URL을 먼저 입력해 주세요.');const r=await fetch(GAS_URL,{method:'POST',mode:'cors',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({action,payload,clientVersion:'field-v1',sentAt:new Date().toISOString()})});const t=await r.text();let o;try{o=JSON.parse(t)}catch(e){throw new Error('서버 응답을 읽지 못했습니다.')}if(!o.ok)throw new Error(o.error||'처리 실패');return o}
+function isDone(r,type){return !!String(type==='paint'?r.paintDoneDate:r.assemblyDoneDate||'').trim()}
+function isAdded(r){return /신규\s*삽입|(^|\s)추가($|\s)/.test(String(r.updateInfo||''))}
+function rowHtml(r){const part=state.part;const plan=part==='paint'?r.paintPlanDate:r.assemblyPlanDate;const done=part==='paint'?r.paintDoneDate:r.assemblyDoneDate;const paintDone=!!r.paintDoneDate;const machineClass=part==='assembly'?(paintDone?'paint-done':'paint-pending'):'';const remark=isAdded(r)?'<span class="add">추가</span>':'';const action=done?`<span class="done-text">완료 ${esc(mmdd(done))}</span>`:`<button class="okbtn" data-ok="${esc(r.id)}">OK</button><label class="calbtn">달력<input type="date" data-cal="${esc(r.id)}"></label>`;return `<div class="row ${done?'done-row':''}" data-id="${esc(r.id)}"><div>${esc(mmdd(r.volvoDate))}</div><div class="model">${esc(r.model)}</div><div class="machine ${machineClass}">${esc(r.machineNo)}</div><div class="plan">${esc(mmdd(plan))}</div><div class="remark">${remark}</div><div class="actions">${action}</div></div>`}
+function render(){state.searchMode=false;$('#searchResult').classList.remove('show');$('#workList').style.display='block';$('#listHead').style.display='grid';$('#clearBtn').style.display='none';$('#planHead').textContent=state.part==='paint'?'도장지시일':'조립지시일';const rows=state.rows.filter(r=>r.kind!=='AS'&&!r.rowHidden);$('#workList').innerHTML=rows.length?rows.map(rowHtml).join(''):'<div class="empty">표시할 작업이 없습니다.</div>';$('#countText').textContent=`${rows.length}건`;bindRows()}
+function bindRows(){document.querySelectorAll('[data-ok]').forEach(b=>b.onclick=()=>saveDone(b.dataset.ok,todayKst()));document.querySelectorAll('[data-cal]').forEach(i=>i.onchange=()=>{if(i.value)saveDone(i.dataset.cal,i.value)})}
+async function saveDone(id,date){const r=state.rows.find(x=>x.id===id);if(!r)return;const type=state.part;try{setSync('저장 중...');const out=await api('saveCompletion',{workId:id,type,date});if(type==='paint')r.paintDoneDate=out.date;else r.assemblyDoneDate=out.date;render();showToast(`${r.machineNo} 완료 ${mmdd(out.date)}`);setSync('저장 완료');setTimeout(()=>refresh('after-save'),400)}catch(e){setSync('저장 실패');showToast(e.message)}}
+function renderSearch(q){const key=String(q||'').trim().replace(/^[*＊﹡]+/,'');if(!key){render();return}const found=state.rows.filter(r=>String(r.machineNo||'').replace(/^[*＊﹡]+/,'').includes(key));state.searchMode=true;$('#workList').style.display='none';$('#listHead').style.display='none';$('#searchResult').classList.add('show');$('#clearBtn').style.display='inline-block';$('#searchResult').innerHTML=found.length?found.map(r=>{const pd=r.paintDoneDate?`완료 ${mmdd(r.paintDoneDate)}`:'미결';const ad=r.assemblyDoneDate?`완료 ${mmdd(r.assemblyDoneDate)}`:'미결';return `<div class="search-line"><div>${esc(mmdd(r.volvoDate))}</div><div>${esc(r.model)}</div><div style="font-size:18px">${esc(r.machineNo)}</div><div class="sm ${r.paintDoneDate?'state-done':'state-pending'}">도장 ${esc(pd)}</div><div class="sm ${r.assemblyDoneDate?'state-done':'state-pending'}">조립 ${esc(ad)}</div><div>${r.rowHidden?'<span class="hidden-badge">숨김</span>':''}</div></div>`}).join(''):'<div class="empty">해당 호기를 찾지 못했습니다.</div>';$('#countText').textContent=`검색 ${found.length}건`}
+function setSync(t){$('#syncText').textContent=t}
+async function refresh(reason='manual'){if(state.loading)return;state.loading=true;try{setSync('자동 갱신 중...');const out=await api('loadFieldOrders',{});state.rows=Array.isArray(out.rows)?out.rows:[];state.lastAt=new Date();if(state.searchMode){renderSearch($('#machineSearch').value)}else render();setSync(`최신 ${state.lastAt.toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'})}`)}catch(e){setSync('연결 오류');if(reason!=='interval')showToast(e.message)}finally{state.loading=false}}
+function startTimer(){clearInterval(state.timer);state.timer=setInterval(()=>{if(!document.hidden)refresh('interval')},AUTO_REFRESH_MS)}
+document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{state.part=b.dataset.part;document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('active',x===b));if(state.searchMode)renderSearch($('#machineSearch').value);else render()});
+$('#searchBtn').onclick=()=>renderSearch($('#machineSearch').value);$('#machineSearch').addEventListener('keydown',e=>{if(e.key==='Enter')renderSearch(e.target.value)});$('#clearBtn').onclick=()=>{$('#machineSearch').value='';render()};
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)refresh('resume')});window.addEventListener('focus',()=>refresh('focus'));
+window.addEventListener('load',async()=>{await refresh('startup');startTimer();if('serviceWorker' in navigator)navigator.serviceWorker.register('./service-worker.js').catch(()=>{})});
+</script>
+</body>
+</html>
