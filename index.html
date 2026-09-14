@@ -59,15 +59,28 @@ button,input{font:inherit}.app{height:100dvh;display:flex;flex-direction:column;
 // 새 현장앱 전용 Apps Script 배포 URL을 아래에 넣으세요.
 const GAS_URL='https://script.google.com/macros/s/AKfycbz3TF7sk2k-p5eCrQcvUOXAaRXm7cMUOUY8aprKgFRIJ9ENQWSPz1iFIw_-uvh1WCp8/exec';
 const AUTO_REFRESH_MS=60*1000;
-const VOLVO_REV_KEY='paintAssemblyLastVolvoRevision';
+// v20: 확인 이력은 서버 공통값이 아니라 각 휴대폰에 따로 저장합니다.
+// 키를 v2로 변경해 이번 배포 후 모든 파트장 휴대폰에서 현재 기준본을 1회 확인하게 합니다.
+const VOLVO_REV_KEY='paintAssemblyLastVolvoRevisionV2';
 const state={part:'paint',rows:[],searchMode:false,searchQuery:'',viewMode:'basic',timer:null,loading:false,lastAt:null};
 const $=s=>document.querySelector(s);
 function esc(v){return String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
 function mmdd(v){const s=String(v||'');const m=s.match(/^(?:\d{4}-?)?(\d{2})-?(\d{2})$/);return m?`${Number(m[1])}/${Number(m[2])}`:(s||'-')}
 function todayKst(){try{const p={};new Intl.DateTimeFormat('en-US',{timeZone:'Asia/Seoul',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date()).forEach(x=>p[x.type]=x.value);return `${p.year}-${p.month}-${p.day}`}catch(e){return new Date(Date.now()+9*3600000).toISOString().slice(0,10)}}
 function showToast(msg){const e=$('#toast');e.textContent=msg;e.classList.add('show');setTimeout(()=>e.classList.remove('show'),1800)}
-function handleVolvoRevision(out){const current=String(out&&out.baselineRevision||'').trim();if(!current)return;let last='';try{last=localStorage.getItem(VOLVO_REV_KEY)||''}catch(e){}if(!last){try{localStorage.setItem(VOLVO_REV_KEY,current)}catch(e){}return}if(last===current)return;try{localStorage.setItem(VOLVO_REV_KEY,current)}catch(e){}setTimeout(()=>window.alert(`새 볼보 조립순서가 업데이트되었습니다.\n기준본: ${last} → ${current}`),0)}
-async function api(action,payload={}){if(!GAS_URL.startsWith('https://'))throw new Error('Index의 GAS_URL을 먼저 입력해 주세요.');const r=await fetch(GAS_URL,{method:'POST',mode:'cors',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({action,payload,clientVersion:'field-v19',sentAt:new Date().toISOString()})});const t=await r.text();let o;try{o=JSON.parse(t)}catch(e){throw new Error('서버 응답을 읽지 못했습니다.')}if(!o.ok)throw new Error(o.error||'처리 실패');return o}
+function handleVolvoRevision(out){
+  const current=String(out&&out.baselineRevision||'').trim();
+  if(!current)return;
+  let last='';
+  try{last=localStorage.getItem(VOLVO_REV_KEY)||''}catch(e){}
+  if(last===current)return;
+  setTimeout(()=>{
+    const detail=last?`${last} → ${current}`:current;
+    window.alert(`새 볼보 조립순서가 업데이트되었습니다.\n기준본: ${detail}`);
+    try{localStorage.setItem(VOLVO_REV_KEY,current)}catch(e){}
+  },0);
+}
+async function api(action,payload={}){if(!GAS_URL.startsWith('https://'))throw new Error('Index의 GAS_URL을 먼저 입력해 주세요.');const r=await fetch(GAS_URL,{method:'POST',mode:'cors',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({action,payload,clientVersion:'field-v20',sentAt:new Date().toISOString()})});const t=await r.text();let o;try{o=JSON.parse(t)}catch(e){throw new Error('서버 응답을 읽지 못했습니다.')}if(!o.ok)throw new Error(o.error||'처리 실패');return o}
 function isDone(r,type){return !!String(type==='paint'?r.paintDoneDate:r.assemblyDoneDate||'').trim()}
 function isAdded(r){return /신규\s*삽입|신규\s*AS|(^|\s)추가($|\s)/.test(String(r.updateInfo||''))}
 function isVolvoDateChanged(r){const s=String(r&&r.updateInfo||'');if(!s||isAdded(r))return false;if(/도장\s*작업일/.test(s)&&!/볼보|조립일/.test(s))return false;return /볼보\s*조립일\s*(변경|이동)|조립일\s*(변경|이동)|일정\s*(변경|이동)|날짜\s*(변경|이동)/.test(s)}
